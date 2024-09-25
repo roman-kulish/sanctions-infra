@@ -107,8 +107,6 @@ const searchIndividuals = async (input: string, limit = smartSearchLimit): Promi
         const line = iuliia.translate(x, iuliia.ICAO_DOC_9303);
         const candidates = await searchCandidates(line, 'individual', limit, individualSearchRankingThreshold);
 
-        console.log({ input, line, limit, candidates });
-
         return {
             q: original[idx],
             x: line,
