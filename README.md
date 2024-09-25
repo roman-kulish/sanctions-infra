@@ -1,14 +1,32 @@
-# Welcome to your CDK TypeScript project
+# Sanctions Search CDK Stack
 
-This is a blank project for CDK development with TypeScript.
+This AWS CDK project deploys a serverless architecture for sanctions search, featuring:
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+* **Node.js Lambda Function:** Handles search logic and integration with Amazon Translate.
+* **API Gateway:** Provides REST API endpoints (`/smart-search` and `/search`) for frontend interaction.
+* **S3 Bucket:** Hosts the static frontend UI files.
 
-## Useful commands
+## Prerequisites:
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `npx cdk deploy`  deploy this stack to your default AWS account/region
-* `npx cdk diff`    compare deployed stack with current state
-* `npx cdk synth`   emits the synthesized CloudFormation template
+* Node.js and npm
+* AWS CLI configured with credentials
+* AWS CDK (`npm install -g aws-cdk`)
+
+## Important:
+
+* **Rename and Edit `config/config.ts.example`:** 
+    * Create a copy of `config/config.ts.example` and name it `config/config.ts`.
+    * Fill in the required configuration values (Meilisearch host, API key, etc.) in `config/config.ts`.
+
+## Deployment:
+
+1. `npm install` (install project dependencies)
+2. `cdk bootstrap` (if not already done)
+3. `cdk deploy` 
+
+The API Gateway URL will be outputted after successful deployment.
+
+## Notes:
+
+* The Lambda function has necessary IAM permissions to call Amazon Translate.
+* You'll likely want to configure a custom domain and HTTPS using Cloudflare or a similar service.

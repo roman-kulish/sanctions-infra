@@ -1,0 +1,16 @@
+export default {
+    meiliSearchApiUrl: 'YOUR_MEILISEARCH_SERVER_URL',
+    meiliSearchApiKey: 'YOUR_MEILISEARCH_API_KEY',
+    meiliSearchIndex: 'sanctions',
+
+    searchLimit: 10,
+    searchInputLimit: 100,
+    smartSearchLimit: 5,
+    smartSearchInputLimit: 1000,
+
+    individualSearchRankingThreshold: 0.9,
+    entitySearchRankingThreshold: 0.55,
+
+    highlightPreTag: '<em>',
+    highlightPostTag: '</em>',
+}

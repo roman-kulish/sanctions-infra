@@ -13,15 +13,20 @@
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "22.5.4",
+    "aws-cdk": "2.159.1",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
-    "aws-cdk": "2.159.1",
     "ts-node": "^10.9.2",
     "typescript": "~5.6.2"
   },
   "dependencies": {
+    "@aws-sdk/client-translate": "^3.654.0",
+    "@types/aws-lambda": "^8.10.145",
     "aws-cdk-lib": "2.159.1",
+    "aws-lambda": "^1.0.7",
     "constructs": "^10.0.0",
+    "iuliia": "^0.8.2",
+    "meilisearch": "^0.42.0",
     "source-map-support": "^0.5.21"
   }
 }
