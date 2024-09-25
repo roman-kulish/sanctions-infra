@@ -1,4 +1,4 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyEventV2, APIGatewayProxyResult, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { TranslateClient, TranslateTextCommand } from "@aws-sdk/client-translate";
 import { Hit, MeiliSearch } from 'meilisearch'
 import * as iuliia from "iuliia";
@@ -150,11 +150,17 @@ const searchDirect = async (input: string, filter?: SearchFilter, limit = search
 const errorResponse = (statusCode: number, message: string) => ({
     statusCode,
     body: JSON.stringify({ message }),
+    headers: {
+        'content-type': 'application/json'
+    }
 });
 
 const response = (statusCode: number, results: any[]) => ({
     statusCode,
     body: JSON.stringify({ results }),
+    headers: {
+        'content-type': 'application/json'
+    }
 })
 
 type SearchRequest = {
@@ -163,7 +169,7 @@ type SearchRequest = {
     limit?: number
 }
 
-export const searchHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const searchHandler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
     const { q, filter, limit }: SearchRequest = JSON.parse(event.body || '');
 
     const query = q.trim();
@@ -213,6 +219,7 @@ export const smartSearchHandler = async (event: APIGatewayProxyEvent): Promise<A
 
         case 'entity':
             results = await searchEntities(query, smartSearchLimit);
+            break;
 
         default:
             return errorResponse(400, 'invalid filter type');

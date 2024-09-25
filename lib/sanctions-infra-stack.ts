@@ -2,12 +2,11 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import * as path from 'node:path';
-import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
+import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import config from '../config';
-import { ScheduledEc2Task } from 'aws-cdk-lib/aws-ecs-patterns';
 
 export class SanctionsInfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -29,7 +28,7 @@ export class SanctionsInfraStack extends cdk.Stack {
 
     const searchLambda = new NodejsFunction(this, 'SearchLambda', {
       runtime: lambda.Runtime.NODEJS_20_X,
-      memorySize: 256,
+      memorySize: 512,
       timeout: cdk.Duration.seconds(30),
       entry: path.join(__dirname, '/../functions/search.ts'),
       handler: 'searchHandler',
@@ -38,7 +37,7 @@ export class SanctionsInfraStack extends cdk.Stack {
 
     const smartSearchLambda = new NodejsFunction(this, 'SmartSearchLambda', {
       runtime: lambda.Runtime.NODEJS_20_X,
-      memorySize: 256,
+      memorySize: 512,
       timeout: cdk.Duration.seconds(30),
       entry: path.join(__dirname, '/../functions/search.ts'),
       handler: 'smartSearchHandler',
@@ -50,18 +49,31 @@ export class SanctionsInfraStack extends cdk.Stack {
       resources: ['*'],
     }));
 
-    const api = new apigateway.RestApi(this, 'SearchApi', {
-      restApiName: 'Search Service',
+    const httpApi = new apigatewayv2.HttpApi(this, 'SearchHttpApi', {
+      apiName: 'Search Service',
+      corsPreflight: {
+        allowOrigins: ['*'], 
+        allowMethods: [
+          apigatewayv2.CorsHttpMethod.POST,
+        ],
+        allowHeaders: ['Origin', 'Accept', 'Content-Type'],
+      },
     });
 
-    const smartSearchResource = api.root.addResource('smart-search');
-    smartSearchResource.addMethod('POST', new apigateway.LambdaIntegration(smartSearchLambda));
+    httpApi.addRoutes({
+      path: '/smart-search',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new HttpLambdaIntegration('SmartSearchIntegration', smartSearchLambda),
+    });
 
-    const searchResource = api.root.addResource('search');
-    searchResource.addMethod('POST', new apigateway.LambdaIntegration(searchLambda));
+    httpApi.addRoutes({
+      path: '/search',
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new HttpLambdaIntegration('SearchIntegration', searchLambda),
+    });
 
     new cdk.CfnOutput(this, 'ApiUrl', {
-      value: api.url,
+      value: httpApi.url!,
       description: 'URL of the Search API',
     });
   }
