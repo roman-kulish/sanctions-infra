@@ -7,6 +7,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import config from '../config';
+import { ScheduledEc2Task } from 'aws-cdk-lib/aws-ecs-patterns';
 
 export class SanctionsInfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -59,28 +60,9 @@ export class SanctionsInfraStack extends cdk.Stack {
     const searchResource = api.root.addResource('search');
     searchResource.addMethod('POST', new apigateway.LambdaIntegration(searchLambda));
 
-    const uiBucket = new s3.Bucket(this, 'UiBucket', {
-      publicReadAccess: true,
-      blockPublicAccess: {
-        blockPublicAcls: false,
-        blockPublicPolicy: false,
-        ignorePublicAcls: false,
-        restrictPublicBuckets: false,
-      },
-      websiteIndexDocument: 'index.html',
-      bucketName: 'sanctions-app',
-    });
-
-    uiBucket.grantRead(new iam.AnyPrincipal());
-
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: api.url,
       description: 'URL of the Search API',
-    });
-
-    new cdk.CfnOutput(this, 'UiUrl', {
-      value: uiBucket.bucketWebsiteUrl,
-      description: 'URL of the deployed UI',
     });
   }
 }
