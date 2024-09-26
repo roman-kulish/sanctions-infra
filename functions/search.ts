@@ -125,7 +125,12 @@ const searchEntities = async (input: string, limit = smartSearchLimit): Promise<
     const lines = await prepare(original.join("\n"), 'en');
 
     return Promise.all(lines.map(async (line, idx) => {
-        const candidates = await searchCandidates(line, 'entity', limit, entitySearchRankingThreshold);
+        const candidates = await searchCandidates(
+            line.replace(/\p{Quotation_Mark}/gu, '').replace(/-/g, ' '), 
+            'entity', 
+            limit, 
+            entitySearchRankingThreshold
+        );
 
         return {
             q: original[idx],
