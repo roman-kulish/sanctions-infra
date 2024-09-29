@@ -54,8 +54,8 @@ const prepare = async (input: string, targetLanguage: Language): Promise<string[
     return split(translated);
 }
 
-const searchText = async (q: string, limit: number, filter?: SearchFilter, rankingScoreThreshold?: number) => {
-    const index = await searchClient.getIndex(meiliSearchIndex)
+const searchText = async (q: string, limit: number, filter?: SearchFilter, rankingScoreThreshold?: number, indexName = 'sanctions') => {
+    const index = await searchClient.getIndex(indexName);
 
     let filterParts = [];
 
@@ -67,10 +67,16 @@ const searchText = async (q: string, limit: number, filter?: SearchFilter, ranki
         filterParts.push(`country = ${filter.country}`);
     }
 
+    const attributesToHighlight = ['name'];
+
+    if (indexName === 'entities') {
+        attributesToHighlight.push('fts');
+    }
+
     return index.search(
         q,
         {
-            attributesToHighlight: ["name"],
+            attributesToHighlight,
             showRankingScore: true,
             ...(filterParts.length && { filter: filterParts.join(' AND ') }),
             ...(rankingScoreThreshold && { rankingScoreThreshold }),
@@ -80,18 +86,22 @@ const searchText = async (q: string, limit: number, filter?: SearchFilter, ranki
         })
 }
 
-const formatHit = ({ name, type, country, _formatted, _rankingScore: score }: Hit<Record<string, any>>) => ({
-    name,
-    ...(_formatted?.name && { nameFormatted: _formatted.name }),
-    type,
-    country,
-    score
-});
+const formatHit = ({ name, type, country, _formatted, _rankingScore: score }: Hit<Record<string, any>>) => {
+    const nameFormatted = _formatted?.fts ? _formatted.fts.join('<br />') : _formatted?.name;
 
-const searchCandidates = async (q: string, type: SearchType, limit: number, rankingScoreThreshold?: number) =>
+    return {
+        name,
+        ...(nameFormatted && { nameFormatted }),
+        type,
+        country,
+        score
+    };
+};
+
+const searchCandidates = async (q: string, type: SearchType, limit: number, rankingScoreThreshold?: number, index = 'sanctions') =>
     (await Promise.all([
-        searchText(q, limit, { type, country: 'au' }, rankingScoreThreshold),
-        searchText(q, limit, { type, country: 'nz' }, rankingScoreThreshold)
+        searchText(q, limit, { type, country: 'au' }, rankingScoreThreshold, index),
+        searchText(q, limit, { type, country: 'nz' }, rankingScoreThreshold, index)
     ])).flatMap((x) => x.hits).map(formatHit).sort(({ score: a }, { score: b }) => b - a);
 
 const searchIndividuals = async (input: string, limit = smartSearchLimit): Promise<any> => {
@@ -122,14 +132,13 @@ const searchEntities = async (input: string, limit = smartSearchLimit): Promise<
         return [];
     }
 
-    const lines = await prepare(original.join("\n"), 'en');
-
-    return Promise.all(lines.map(async (line, idx) => {
+    return Promise.all(original.map(async (line, idx) => {
         const candidates = await searchCandidates(
-            line.replace(/\p{Quotation_Mark}/gu, '').replace(/-/g, ' '), 
-            'entity', 
-            limit, 
-            entitySearchRankingThreshold
+            line.replace(/\p{Quotation_Mark}/gu, '').replace(/-/g, ' '),
+            'entity',
+            limit,
+            entitySearchRankingThreshold,
+            'entities'
         );
 
         return {
